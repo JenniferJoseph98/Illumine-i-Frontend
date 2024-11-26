@@ -21,5 +21,7 @@ urlpatterns = [
     path('enrolledcourse/<str:student_id>',views.EnrolledSubjectsView.as_view(),name='enrolledcourse'),
     path('availablecourse/<str:student_id>',views.AvailableCoursesView.as_view(),name='availablecourse'),
     path('enrollbyfaculty',views.EnrollStudentInFacultySubject.as_view(),name='enrolledbyfaculty'),
-    path('unenrolledstudent/<str:faculty_id>',views.UnenrolledStudent.as_view(),name='unenrolledstudent')
+    path('unenrolledstudent/<str:faculty_id>',views.UnenrolledStudent.as_view(),name='unenrolledstudent'),
+    path('students/update-profile-pic/<str:studentId>', views.UpdateProfilePicView.as_view(), name='update-profile-pic'),
+
 ]

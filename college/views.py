@@ -12,7 +12,32 @@ import os
 from django.db import transaction
 
 
+from rest_framework.parsers import MultiPartParser, FormParser
+class UpdateProfilePicView(APIView):
+    parser_classes = [MultiPartParser, FormParser]
 
+    def put(self, request, studentId):
+        try:
+            # Get the student instance by studentId
+            student = Student.objects.get(studentId=studentId)
+        except Student.DoesNotExist:
+            return Response({"error": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Get the file from the request
+        profile_pic = request.FILES.get('profile_pic')
+        if not profile_pic:
+            return Response({"error": "No image file provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Update the profile_pic field
+        student.profile_pic = profile_pic
+        student.save()
+
+        return Response({
+            "message": "Profile picture updated successfully.",
+            "profile_pic_url": student.profile_pic.url
+        }, status=status.HTTP_200_OK)
+        
+        
 
 class DeleteAllStudentsAndSubjects(APIView):
     def delete(self, request):

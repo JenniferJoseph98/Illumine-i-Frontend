@@ -9,12 +9,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 import os
-from django.db import transaction
 
-
-from rest_framework.parsers import MultiPartParser, FormParser
+#upload profile picture
 class UpdateProfilePicView(APIView):
-    parser_classes = [MultiPartParser, FormParser]
 
     def put(self, request, studentId):
         try:
@@ -23,53 +20,27 @@ class UpdateProfilePicView(APIView):
         except Student.DoesNotExist:
             return Response({"error": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Get the file from the request
+        # Get the file from the request 
         profile_pic = request.FILES.get('profile_pic')
         if not profile_pic:
             return Response({"error": "No image file provided."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Update the profile_pic field
+        # Update the profile_pic field and save the image in cloudinary
         student.profile_pic = profile_pic
         student.save()
 
         return Response({
             "message": "Profile picture updated successfully.",
-            "profile_pic_url": student.profile_pic.url
+            "rl": student.profile_pic.url
         }, status=status.HTTP_200_OK)
         
         
 
-class DeleteAllStudentsAndSubjects(APIView):
-    def delete(self, request):
-        try:
-            # Delete all records in Subject and Student
-            Subject.objects.all().delete()
-            Student.objects.all().delete()
-
-            return Response(
-                {"message": "All Student and Subject records deleted successfully."},
-                status=status.HTTP_200_OK
-            )
-        except Exception as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-# Create your views here.
 
 def index(request):
     return HttpResponse('Hello World, Have a Good day')
 
-# Add student (POST)
-# class AddStudentView(APIView):
-#     def post(self, request):
-#         serializer = StudentSerializer(data=request.data) # QUery to add new student
-#         if serializer.is_valid():
-#             serializer.save()
-#             return Response({"status": "success", "data": serializer.data}, status=status.HTTP_201_CREATED)
-#         else:
-#             return Response({"status": "error", "data": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-
+#Add student
 class AddStudentView(APIView):
     def post(self, request,facultyId):
         try:
@@ -81,7 +52,7 @@ class AddStudentView(APIView):
                 )
             
             # Verify if the faculty exists
-            faculty = Faculty.objects.get(facultyId=facultyId)  # Raises DoesNotExist if not found
+            faculty = Faculty.objects.get(facultyId=facultyId)  
             
             # Proceed to validate and save the student data
             serializer = StudentSerializer(data=request.data)
@@ -98,31 +69,18 @@ class AddStudentView(APIView):
                 )
         
         except Faculty.DoesNotExist:
-            # Handle case when the facultyId is invalid
             return Response(
                 {"status": "error", "message": "Invalid facultyId. Faculty not found."},
                 status=status.HTTP_404_NOT_FOUND
             )
         except Exception as e:
-            # Handle unexpected errors
             return Response(
                 {"status": "error", "message": f"An unexpected error occurred: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
 
-
-#Add Faculty (POST)
-class AddFacultyView(APIView):
-    def post(self, request):
-        serializer = FacultySerializer(data=request.data)
-        print(serializer)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"status": "success", "data": serializer.data}, status=status.HTTP_201_CREATED)
-        else:
-            return Response({"status": "error", "data": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-        
+    
 # Faculty Login
 class FacultyLoginAPIView(APIView):
     def post(self, request):
@@ -275,82 +233,12 @@ class UpdateStudentView(APIView):
                 )
 
         except Exception as e:
-            # Handle unexpected errors
             return Response(
                 {"status": "error", "message": f"An unexpected error occurred: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
             
-#Add profile picture
-class UpdateStudentProfilePictureView(APIView):
-    def put(self, request):
-        try:
-            # Extract studentId and profile picture from the request
-            student_id = request.data.get("studentId")
-            profile_picture = request.FILES.get("profile_pic")
 
-            if not student_id:
-                return Response(
-                    {"status": "error", "message": "studentId is required."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            if not profile_picture:
-                return Response(
-                    {"status": "error", "message": "profile_pic is required."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            # Check if the file size is within the 1MB limit
-            max_size = 1 * 1024 * 1024  # 1MB in bytes
-            if profile_picture.size > max_size:
-                return Response(
-                    {"status": "error", "message": "Profile picture must be 1MB or smaller."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            # Check if the student exists
-            try:
-                student = Student.objects.get(studentId=student_id)
-            except Student.DoesNotExist:
-                return Response(
-                    {"status": "error", "message": "Invalid studentId. Student not found."},
-                    status=status.HTTP_404_NOT_FOUND
-                )
-
-            # Define the directory to save the profile pictures
-            profile_pics_dir = os.path.join(settings.MEDIA_ROOT, "profile_pics")
-            if not os.path.exists(profile_pics_dir):
-                os.makedirs(profile_pics_dir)  # Create the directory if it doesn't exist
-
-            # Save the file to the directory
-            file_path = os.path.join(profile_pics_dir, profile_picture.name)
-            with open(file_path, "wb+") as destination:
-                for chunk in profile_picture.chunks():
-                    destination.write(chunk)
-
-            # Update the student's profile_pic field with the relative path
-            relative_path = f"profile_pics/{profile_picture.name}"
-            student.profile_pic = relative_path
-            student.save()
-
-            return Response(
-                {
-                    "status": "success",
-                    "message": "Profile picture updated successfully.",
-                    "data": {
-                        "studentId": student.studentId,
-                        "profile_pic": relative_path
-                    }
-                },
-                status=status.HTTP_200_OK
-            )
-
-        except Exception as e:
-            return Response(
-                {"status": "error", "message": f"An unexpected error occurred: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-            
 # Add Subject
 
 class AddSubjectView(APIView):
@@ -404,34 +292,7 @@ class AddSubjectView(APIView):
             )
 
 
-#Faculty who dont have subject
 
-class FacultyWithoutSubjectsView(APIView):
-    def get(self, request):
-        try:
-            # Find all faculties who don't have any subjects assigned
-            faculties_without_subjects = Faculty.objects.filter(subjects__isnull=True)
-
-            # If no faculties found
-            if not faculties_without_subjects:
-                return Response(
-                    {"status": "error", "message": "No faculties without subjects found."},
-                    status=status.HTTP_404_NOT_FOUND
-                )
-
-            # Serialize the faculties
-            serializer = FacultySerializer(faculties_without_subjects, many=True)
-
-            return Response(
-                {"status": "success", "data": serializer.data},
-                status=status.HTTP_200_OK
-            )
-        except Exception as e:
-            return Response(
-                {"status": "error", "message": f"An unexpected error occurred: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
- 
 #View Subject details for one faculty with the help of FacultyId
             
 class SubjectByFacultyView(APIView):
@@ -454,28 +315,7 @@ class SubjectByFacultyView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-#View all the subject with faculty
-
-class SubjectAndFacultyView(APIView):
-    def get(self, request):
-        try:
-            # Fetch all subjects with related faculty data
-            subjects = Subject.objects.select_related('faculty').prefetch_related('students').all()
-
-            # Serialize the data
-            serializer = SubjectSerializer(subjects, many=True)
-
-            return Response(
-                {"status": "success", "data": serializer.data},
-                status=status.HTTP_200_OK
-            )
-        except Exception as e:
-            return Response(
-                {"status": "error", "message": f"An unexpected error occurred: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-            
-            
+         
 #Student enrollment
 
 class EnrollStudentView(APIView):
@@ -607,9 +447,7 @@ class AvailableCoursesView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )          
             
-            
-            
-            
+                   
 class EnrollStudentInFacultySubject(APIView):
     def post(self, request):
         try:

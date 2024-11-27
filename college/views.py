@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from .models import Student,Faculty,Subject
 from rest_framework.exceptions import NotFound
-from .serializers import StudentSerializer,FacultySerializer,SubjectSerializer,CustomSubjectSerializer,LimitedStudentSerializer
+from .serializers import StudentSerializer,FacultySerializer,SubjectSerializer,CustomSubjectSerializer,LimitedStudentSerializer,FacultyWithSubjectsSerializer
 from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -138,10 +138,12 @@ class FacultyLoginAPIView(APIView):
         try:
             # Check faculty credentials
             faculty = Faculty.objects.get(email=email)
+            exists = Subject.objects.filter(faculty=faculty.id).exists()
+            
             expected_password = f"{email[:4]}{faculty.contact_number[-4:]}"  # first 4 of email and last 4 of contact
             print(expected_password)
             if password == expected_password:
-                return Response({"message": "Login Successful", "faculty_id": faculty.facultyId}, status=status.HTTP_200_OK)
+                return Response({"message": "Login Successful", "faculty_id": faculty.facultyId,"subject":exists,"name":faculty.name}, status=status.HTTP_200_OK)
             else:
                 return Response({"error": "Invalid Password"}, status=status.HTTP_401_UNAUTHORIZED)
         except Faculty.DoesNotExist:
@@ -162,7 +164,7 @@ class StudentLoginAPIView(APIView):
             student = Student.objects.get(email=email)
             expected_password = f"{email[:4]}{student.contact_number[-4:]}"  # First 4 letters of name, last 4 of contact
             if password == expected_password:
-                return Response({"message": "Login Successful", "student_id": student.studentId}, status=status.HTTP_200_OK)
+                return Response({"message": "Login Successful", "student_id": student.studentId, "name":student.first_name}, status=status.HTTP_200_OK)
             else:
                 return Response({"error": "Invalid Password"}, status=status.HTTP_401_UNAUTHORIZED)
         except Student.DoesNotExist:
@@ -186,7 +188,7 @@ class ViewStudentView(APIView):
 class ViewFacultyView(APIView):
     def get(self, request):
         faculty = Faculty.objects.all()  # Query all students
-        serializer = FacultySerializer(faculty, many=True)
+        serializer = FacultyWithSubjectsSerializer(faculty, many=True)
         return Response({"status": "success", "data": serializer.data}, status=status.HTTP_200_OK)
     
 

@@ -1,13 +1,16 @@
+
 from django.db import models
 # Create your models here.
 import uuid
+from cloudinary.models import CloudinaryField
+
 class Student(models.Model):
     studentId=models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=3)
     dob = models.DateField()
     gender = models.CharField(max_length=10, choices=(("Male", "Male"), ("Female", "Female")))
-    profile_pic = models.ImageField(upload_to="profile_pics/", blank=True, null=True)
+    profile_pic = CloudinaryField("image", blank=True, null=True)
     contact_number = models.CharField(max_length=10)
     address = models.TextField()
     bloodgroup=models.CharField(max_length=100)

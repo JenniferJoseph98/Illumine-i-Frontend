@@ -11,7 +11,10 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
-
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+from decouple import config
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -21,7 +24,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-4-t#3&2u(0bt@x#=47)cu0@6kr9h=%894wz#dxvr&rjw#e&(9g'
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
@@ -39,7 +41,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'college',
     'rest_framework',
-    'corsheaders'
+    'corsheaders',
+'cloudinary'
 ]
 
 MIDDLEWARE = [
@@ -94,7 +97,7 @@ WSGI_APPLICATION = 'admin.wsgi.application'
 import dj_database_url
 
 DATABASES={
-    'default':dj_database_url.parse('postgresql://college_k4cf_user:nHrb1RXKbde09mrAHUt3FH7nM6r3Qrjc@dpg-ct22aj3tq21c73et5ueg-a.oregon-postgres.render.com/college_k4cf')
+    'default':dj_database_url.parse(config("postgreSQL"))
 }
 
 # Password validation
@@ -148,3 +151,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 STATIC_ROOT = BASE_DIR / 'static'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
+
+cloudinary.config(cloud_name=config('cloud_name'),api_key=config('api_key'),api_secret=config("api_secret"))
+DEFAULT_FILE_STORAGE='cloudinary_storage.storage.MediaCloudinaryStorage'

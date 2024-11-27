@@ -32,3 +32,15 @@ class CustomSubjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subject
         fields = ['id', 'subjectId', 'name', 'faculty', 'students']
+
+class SubjectNameSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subject
+        fields = ['name','students']  # Include only the subject name
+
+class FacultyWithSubjectsSerializer(serializers.ModelSerializer):
+    subjects = SubjectNameSerializer(many=True)  # Use the related_name 'subjects' from the Subject model
+
+    class Meta:
+        model = Faculty
+        fields = ['facultyId', 'email', 'name', 'contact_number', 'subjects']
